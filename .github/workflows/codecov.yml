@@ -1,0 +1,61 @@
+name: Simple benchmarks
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  deployments: write  # 用于部署 GitHub Pages 网站
+  contents: write     # 更新 gh-pages 分支中的基准内容
+
+jobs:
+  benchmark:
+    name: Performance regression check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+          architecture: "x64"
+
+      - name: Install Dependencies
+        working-directory: ./bindings/python  # 请确认这是 requirements.txt 所在的路径
+        run: |
+          if [ ! -f "requirements.txt" ]; then
+            echo "requirements.txt does not exist. Please check the path."
+            exit 1
+          fi
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        working-directory: ./bindings/python
+        run: |
+          cargo test
+          pytest --benchmark-json output.json benches/
+
+      - name: Download previous benchmark data
+        uses: actions/cache@v2
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'pytest'
+          output-file-path: ./bindings/python/output.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          comment-on-alert: true
+          alert-comment-cc-users: '@Narsil'
