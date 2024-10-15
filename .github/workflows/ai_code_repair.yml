@@ -20,7 +20,10 @@ jobs:
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
-        languages: 'javascript,python' # Specify your language here
+        languages: 'javascript,python'  # 指定语言
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
+
+    - name: Upload CodeQL results
+      run: codeql github upload-results
