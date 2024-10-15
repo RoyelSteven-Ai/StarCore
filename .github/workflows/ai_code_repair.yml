@@ -8,22 +8,37 @@ on:
     branches:
       - main
 
+permissions:
+  # 给 CodeQL 足够的权限上传扫描结果
+  security-events: write
+  contents: read
+
 jobs:
   codeql-analysis:
     name: Analyze code with CodeQL
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # Step 1: 检出代码仓库
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: 'javascript,python'  # 指定语言
+      # Step 2: 初始化 CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: 'javascript,python'  # 指定要扫描的语言
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      # Step 3: 自动构建项目（如果适用）
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
 
-    - name: Upload CodeQL results
-      run: codeql github upload-results
+      # Step 4: 进行 CodeQL 分析
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+      # Step 5: 上传 CodeQL 结果
+      - name: Upload CodeQL SARIF results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'results/*.sarif'  # 指定 SARIF 文件路径
